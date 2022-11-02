@@ -1,0 +1,5 @@
+pystan
+pandas
+cython
+matplotlib
+arviz
