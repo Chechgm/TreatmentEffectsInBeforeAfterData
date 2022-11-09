@@ -69,4 +69,20 @@ model {
                     sigma_one);
     }
 } 
-generated quantities {} 
+generated quantities {
+    array[N] real control_pre;
+    array[N] real control_post;
+    array[N] real treatment_pre;
+    array[N] real treatment_post;
+
+    for(n in 1:N) {
+        treatment_pre[n] = normal_rng(alpha[n] + b_city_zero[city[n]] + b_grade_zero[grade[n]] + b_supplement_zero[supplement[n]], 
+                    sigma_zero);
+        treatment_post[n] = normal_rng(alpha[n] + theta + gamma_one[n] + b_city_one[city[n]] + b_grade_one[grade[n]] + b_supplement_one[supplement[n]],
+                    sigma_one);
+        control_pre[n] = normal_rng(alpha[n] + b_city_zero[city[n]] + b_grade_zero[grade[n]] + b_supplement_zero[supplement[n]], 
+                    sigma_zero);
+        control_post[n] = normal_rng(alpha[n] + b_city_one[city[n]] + b_grade_one[grade[n]] + b_supplement_one[supplement[n]],
+                    sigma_one);
+    }
+} 
