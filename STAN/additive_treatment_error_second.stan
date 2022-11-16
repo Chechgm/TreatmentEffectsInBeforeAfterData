@@ -11,9 +11,17 @@ data{
 parameters{
     real theta; // Treatment effect 
     
-    array[N] real alpha; // alpha_{j} in the paper, per unit Constant
-    real alpha_mu; // Constant hyperprior
-    real<lower=0> alpha_sigma; // Constant hyperprior
+    array[N] real alpha_treated; // alpha_{j} in the paper, per unit Constant
+    array[N] real alpha_control;
+    
+    // We can either have a common hyperprior for the alpha treated and the alpha control
+    // or a hyper prior that depends on the treatment status:
+    //real alpha_mu; // Constant hyperprior
+    //real<lower=0> alpha_sigma; // Constant hyperprior
+    real alpha_treated_mu; 
+    real<lower=0> alpha_treated_sigma;
+    real alpha_control_mu; 
+    real<lower=0> alpha_control_sigma;
     
     // The following are beta_{0} in the paper
     array[2] real b_city_zero;
@@ -37,9 +45,12 @@ parameters{
 model { 
     theta ~ std_normal();
 
-    alpha_mu ~ normal(0, 1);
-    alpha_sigma ~ normal(0, 1);
-    alpha ~ normal(alpha_mu, alpha_sigma);
+    alpha_treated_mu ~ normal(0, 1);
+    alpha_treated_sigma ~ normal(0, 1);
+    alpha_control_mu ~ normal(0, 1);
+    alpha_control_sigma ~ normal(0, 1);
+    alpha_treated ~ normal(alpha_treated_mu, alpha_treated_sigma);
+    alpha_control ~ normal(alpha_control_mu, alpha_control_sigma);
     
     b_city_zero ~ std_normal();
     b_grade_zero ~ std_normal();
@@ -58,16 +69,16 @@ model {
 
     for(n in 1:N) {
         target += normal_lpdf(treated_pretest[n] | 
-                    alpha[n] + b_city_zero[city[n]] + b_grade_zero[grade[n]] + b_supplement_zero[supplement[n]], 
+                    alpha_treated[n] + b_city_zero[city[n]] + b_grade_zero[grade[n]] + b_supplement_zero[supplement[n]], 
                     sigma_zero);
         target += normal_lpdf(treated_posttest[n] | 
-                    alpha[n] + theta + gamma_one[n] + b_city_one[city[n]] + b_grade_one[grade[n]] + b_supplement_one[supplement[n]], 
+                    alpha_treated[n] + theta + gamma_one[n] + b_city_one[city[n]] + b_grade_one[grade[n]] + b_supplement_one[supplement[n]], 
                     sigma_one);
         target += normal_lpdf(control_pretest[n] | 
-                    alpha[n] + b_city_zero[city[n]] + b_grade_zero[grade[n]] + b_supplement_zero[supplement[n]], 
+                    alpha_control[n] + b_city_zero[city[n]] + b_grade_zero[grade[n]] + b_supplement_zero[supplement[n]], 
                     sigma_zero);
         target += normal_lpdf(control_posttest[n] | 
-                    alpha[n] + b_city_one[city[n]] + b_grade_one[grade[n]] + b_supplement_one[supplement[n]],
+                    alpha_control[n] + b_city_one[city[n]] + b_grade_one[grade[n]] + b_supplement_one[supplement[n]],
                     sigma_one);
     }
 } 
@@ -78,13 +89,13 @@ generated quantities {
     array[N] real treatment_post;
 
     for(n in 1:N) {
-        treatment_pre[n] = normal_rng(alpha[n] + b_city_zero[city[n]] + b_grade_zero[grade[n]] + b_supplement_zero[supplement[n]], 
+        treatment_pre[n] = normal_rng(alpha_treated[n] + b_city_zero[city[n]] + b_grade_zero[grade[n]] + b_supplement_zero[supplement[n]], 
                     sigma_zero);
-        treatment_post[n] = normal_rng(alpha[n] + theta + gamma_one[n] + b_city_one[city[n]] + b_grade_one[grade[n]] + b_supplement_one[supplement[n]],
+        treatment_post[n] = normal_rng(alpha_treated[n] + theta + gamma_one[n] + b_city_one[city[n]] + b_grade_one[grade[n]] + b_supplement_one[supplement[n]],
                     sigma_one);
-        control_pre[n] = normal_rng(alpha[n] + b_city_zero[city[n]] + b_grade_zero[grade[n]] + b_supplement_zero[supplement[n]], 
+        control_pre[n] = normal_rng(alpha_control[n] + b_city_zero[city[n]] + b_grade_zero[grade[n]] + b_supplement_zero[supplement[n]], 
                     sigma_zero);
-        control_post[n] = normal_rng(alpha[n] + b_city_one[city[n]] + b_grade_one[grade[n]] + b_supplement_one[supplement[n]],
+        control_post[n] = normal_rng(alpha_control[n] + b_city_one[city[n]] + b_grade_one[grade[n]] + b_supplement_one[supplement[n]],
                     sigma_one);
     }
 } 
